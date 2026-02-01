@@ -1,0 +1,132 @@
+:root {
+  --theme: #ff9800;
+}
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+}
+
+body {
+  margin: 0;
+  background: #000;
+  font-family: system-ui;
+}
+
+#player-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: black;
+  overflow: hidden;
+}
+
+video, #yt-player iframe {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+#yt-player {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+
+.logo {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 20;
+  font-size: 18px;
+  color: var(--theme);
+  text-shadow: 0 0 5px black;
+}
+
+#brightness-layer {
+  position: absolute;
+  inset: 0;
+  background: black;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.lock-btn,
+.screenshot-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 26px;
+  z-index: 15;
+  cursor: pointer;
+}
+
+.lock-btn { left: 15px; }
+.screenshot-btn { right: 15px; }
+
+#controls {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(to top, rgba(0,0,0,.8), transparent);
+  z-index: 10;
+  transition: opacity .3s;
+}
+
+.progress {
+  height: 4px;
+  background: #444;
+  cursor: pointer;
+}
+
+.progress-filled {
+  height: 100%;
+  width: 0%;
+  background: var(--theme);
+}
+
+.bottom-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  color: white;
+}
+
+button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+#settings-menu {
+  position: absolute;
+  right: 10px;
+  bottom: 70px;
+  background: rgba(0,0,0,.9);
+  padding: 12px;
+  display: none;
+  z-index: 20;
+  color: white;
+}
+
+.setting-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.time-popup {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 20px;
+  display: none;
+  z-index: 15;
+}
