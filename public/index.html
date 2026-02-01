@@ -13,7 +13,7 @@
 <div id="player-container">
 
   <!-- Logo -->
-  <div class="logo">𝕰𝖓𝖌𝖎𝖓𝖊𝖊𝖗𝖘 𝕭𝖆𝖇𝖚✍</div>
+  <div class="logo">𝕰𝖓𝖌𝖎𝖓𝖊𝖊𝖗𝖘 𝕭𝖆𝖇𝖚</div>
 
   <!-- Video -->
   <video id="video" playsinline></video>
@@ -39,7 +39,6 @@
       <span id="time">00:00 / 00:00</span>
       <div class="right-controls">
         <button id="settings">⚙</button>
-        <button id="rotate-btn">🔄</button>
         <button id="fullscreen">⛶</button>
       </div>
     </div>
@@ -47,11 +46,21 @@
 
   <!-- Settings Menu -->
   <div id="settings-menu">
-    <div class="setting-block">
-      <label>Speed</label>
-      <input type="range" min="0.25" max="5" step="0.1" id="speed">
-    </div>
+  <div class="setting-block">
+    <label>Speed</label>
+    <input type="range" min="0.25" max="5" step="0.1" id="speed">
   </div>
+  <div class="setting-block">
+    <label>Quality</label>
+    <select id="quality">
+      <option value="auto" selected>Auto</option>
+      <option value="360">360p</option>
+      <option value="480">480p</option>
+      <option value="720">720p</option>
+      <option value="1080">1080p</option>
+    </select>
+  </div>
+</div>
 
 </div>
 
