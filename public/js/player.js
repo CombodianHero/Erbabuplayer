@@ -9,9 +9,12 @@ const timeText = document.getElementById("time");
 const controls = document.getElementById("controls");
 const settingsMenu = document.getElementById("settings-menu");
 
+const speedInput = document.getElementById("speed");
+const qualitySelect = document.getElementById("quality");
+
 let hideTimer;
 
-// Player type
+// Player type detection
 if (isYouTube(url)) {
   loadYT(extractYTID(url));
 } else {
@@ -19,6 +22,9 @@ if (isYouTube(url)) {
     const hls = new Hls();
     hls.loadSource(url);
     hls.attachMedia(video);
+    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      setupQualityOptions(hls);
+    });
   } else {
     video.src = url;
   }
@@ -43,16 +49,33 @@ video.ontimeupdate = () => {
   timeText.textContent = format(video.currentTime) + " / " + format(video.duration);
 };
 
-// Fullscreen
-document.getElementById("fullscreen").onclick = () =>
-  document.getElementById("player-container").requestFullscreen();
+// Fullscreen with auto rotation
+document.getElementById("fullscreen").onclick = () => {
+  const container = document.getElementById("player-container");
+  if (!document.fullscreenElement) {
+    container.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+};
 
-// Settings
+// Detect fullscreen change to auto rotate / reset
+document.addEventListener("fullscreenchange", () => {
+  const container = document.getElementById("player-container");
+  if (document.fullscreenElement) {
+    container.style.transform = "rotate(90deg)";
+  } else {
+    container.style.transform = "rotate(0deg)";
+  }
+  container.style.transition = "transform 0.3s";
+});
+
+// Settings toggle
 document.getElementById("settings").onclick = () =>
   settingsMenu.style.display = settingsMenu.style.display==="block"?"none":"block";
 
 // Speed
-document.getElementById("speed").oninput = e => {
+speedInput.oninput = e => {
   if (isYT) ytPlayer.setPlaybackRate(+e.target.value);
   else video.playbackRate = e.target.value;
 };
@@ -81,14 +104,24 @@ document.onmousemove = () => {
 
 // Format time
 function format(t){ if(!t) return "00:00"; const m=Math.floor(t/60); const s=Math.floor(t%60); return `${m}:${s.toString().padStart(2,"0")}`; }
-// Rotate button functionality
-const rotateBtn = document.getElementById("rotate-btn");
-const playerContainer = document.getElementById("player-container");
 
-let currentRotation = 0;
+// -----------------------------
+// QUALITY HANDLER (HLS)
+function setupQualityOptions(hls) {
+  if(!hls.levels) return;
+  qualitySelect.innerHTML = "<option value='auto'>Auto</option>";
+  hls.levels.forEach((lvl, idx) => {
+    const option = document.createElement("option");
+    option.value = idx;
+    option.textContent = lvl.height + "p";
+    qualitySelect.appendChild(option);
+  });
 
-rotateBtn.addEventListener("click", () => {
-    currentRotation += 90; // rotate 90 degrees clockwise each click
-    playerContainer.style.transform = `rotate(${currentRotation}deg)`;
-    playerContainer.style.transition = "transform 0.3s";
-});
+  qualitySelect.onchange = () => {
+    if(qualitySelect.value === "auto") {
+      hls.currentLevel = -1; // Auto
+    } else {
+      hls.currentLevel = parseInt(qualitySelect.value);
+    }
+  };
+}
