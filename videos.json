@@ -1,0 +1,10 @@
+{
+  "abc123": {
+    "type": "mp4",
+    "url": "https://filesamples.com/samples/video/mp4/sample_640x360.mp4"
+  },
+  "hls001": {
+    "type": "hls",
+    "url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+  }
+}
