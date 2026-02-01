@@ -81,3 +81,14 @@ document.onmousemove = () => {
 
 // Format time
 function format(t){ if(!t) return "00:00"; const m=Math.floor(t/60); const s=Math.floor(t%60); return `${m}:${s.toString().padStart(2,"0")}`; }
+// Rotate button functionality
+const rotateBtn = document.getElementById("rotate-btn");
+const playerContainer = document.getElementById("player-container");
+
+let currentRotation = 0;
+
+rotateBtn.addEventListener("click", () => {
+    currentRotation += 90; // rotate 90 degrees clockwise each click
+    playerContainer.style.transform = `rotate(${currentRotation}deg)`;
+    playerContainer.style.transition = "transform 0.3s";
+});
