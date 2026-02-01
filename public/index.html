@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Engineers Babu Player</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="css/player.css">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+</head>
+<body>
+
+<div id="player-container">
+
+  <!-- Logo -->
+  <div class="logo">𝕰𝖓𝖌𝖎𝖓𝖊𝖊𝖗𝖘 𝕭𝖆𝖇𝖚✍</div>
+
+  <!-- Video -->
+  <video id="video" playsinline></video>
+
+  <!-- YouTube -->
+  <div id="yt-player"></div>
+
+  <!-- Brightness overlay -->
+  <div id="brightness-layer"></div>
+
+  <!-- Lock & Screenshot -->
+  <div class="lock-btn">🔒</div>
+  <div class="screenshot-btn">📸</div>
+
+  <!-- Time popup -->
+  <div class="time-popup">00:00</div>
+
+  <!-- Controls -->
+  <div id="controls">
+    <div class="progress"><div class="progress-filled"></div></div>
+    <div class="bottom-controls">
+      <button id="play">▶</button>
+      <span id="time">00:00 / 00:00</span>
+      <div class="right-controls">
+        <button id="settings">⚙</button>
+        <button id="fullscreen">⛶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Menu -->
+  <div id="settings-menu">
+    <div class="setting-block">
+      <label>Speed</label>
+      <input type="range" min="0.25" max="5" step="0.1" id="speed">
+    </div>
+  </div>
+
+</div>
+
+<script src="js/yt.js"></script>
+<script src="js/player.js"></script>
+
+</body>
+</html>
