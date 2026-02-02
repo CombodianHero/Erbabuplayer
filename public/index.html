@@ -6,66 +6,226 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="stylesheet" href="css/player.css">
+
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.6/shaka-player.compiled.js"></script>
 </head>
+
 <body>
 
 <div id="player-container">
 
-  <!-- Logo -->
   <div class="logo">𝕰𝖓𝖌𝖎𝖓𝖊𝖊𝖗𝖘 𝕭𝖆𝖇𝖚</div>
 
-  <!-- Video -->
   <video id="video" playsinline></video>
-
-  <!-- YouTube -->
-  <div id="yt-player"></div>
-
-  <!-- Brightness overlay -->
-  <div id="brightness-layer"></div>
-
-  <!-- Lock & Screenshot -->
-  <div class="lock-btn">🔒</div>
-  <div class="screenshot-btn">📸</div>
-
-  <!-- Time popup -->
-  <div class="time-popup">00:00</div>
 
   <!-- Controls -->
   <div id="controls">
-    <div class="progress"><div class="progress-filled"></div></div>
+    <div id="progress-bar">
+      <div id="progress-fill"></div>
+    </div>
+
     <div class="bottom-controls">
-      <button id="play">▶</button>
+      <button id="play-btn">▶</button>
       <span id="time">00:00 / 00:00</span>
+
       <div class="right-controls">
-        <button id="settings">⚙</button>
-        <button id="fullscreen">⛶</button>
+        <button id="speed-btn">⏩</button>
+        <button id="quality-btn">HD</button>
+        <button id="fullscreen-btn">⛶</button>
       </div>
     </div>
   </div>
 
-  <!-- Settings Menu -->
-  <div id="settings-menu">
-  <div class="setting-block">
-    <label>Speed</label>
-    <input type="range" min="0.25" max="5" step="0.1" id="speed">
+  <!-- Menus -->
+  <div id="speed-menu" class="menu"></div>
+  <div id="quality-menu" class="menu"></div>
+
+  <!-- Loading / Error -->
+  <div id="loading">Loading…</div>
+  <div id="error">
+    <p id="error-msg"></p>
+    <button onclick="retry()">Retry</button>
   </div>
-  <div class="setting-block">
-    <label>Quality</label>
-    <select id="quality">
-      <option value="auto" selected>Auto</option>
-      <option value="360">360p</option>
-      <option value="480">480p</option>
-      <option value="720">720p</option>
-      <option value="1080">1080p</option>
-    </select>
-  </div>
-</div>
 
 </div>
 
-<script src="js/yt.js"></script>
-<script src="js/player.js"></script>
+<script>
+/* ================= CONFIG ================= */
+
+const API_BASE_URL = "https://itsgolu-v1player-api.vercel.app/api/proxy";
+
+const video = document.getElementById("video");
+const playBtn = document.getElementById("play-btn");
+const progressBar = document.getElementById("progress-bar");
+const progressFill = document.getElementById("progress-fill");
+const timeEl = document.getElementById("time");
+const fullscreenBtn = document.getElementById("fullscreen-btn");
+
+let hls = null;
+let shakaPlayer = null;
+
+/* ================= INIT ================= */
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const url = new URLSearchParams(window.location.search).get("url");
+  if (!url) return showError("No Classplus URL provided");
+
+  try {
+    showLoading();
+    const data = await fetchVideoData(url);
+
+    if (data.MPD && data.KEYS) {
+      await loadDRM(data.MPD, data.KEYS);
+    } else if (data.url) {
+      await loadHLS(data.url);
+    } else {
+      throw new Error("Invalid API response");
+    }
+
+    video.play().catch(() => {});
+    hideLoading();
+  } catch (e) {
+    showError(e.message);
+  }
+});
+
+/* ================= API ================= */
+
+async function fetchVideoData(classplusUrl) {
+  const apiUrl = `${API_BASE_URL}?url=${encodeURIComponent(classplusUrl)}`;
+  const res = await fetch(apiUrl);
+  if (!res.ok) throw new Error("Proxy API failed");
+  return res.json();
+}
+
+/* ================= HLS ================= */
+
+async function loadHLS(url) {
+  if (Hls.isSupported()) {
+    hls?.destroy();
+    hls = new Hls();
+    hls.loadSource(url);
+    hls.attachMedia(video);
+
+    hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
+      buildHLSQualityMenu(data.levels);
+    });
+
+  } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+    video.src = url;
+  } else {
+    throw new Error("HLS not supported");
+  }
+}
+
+function buildHLSQualityMenu(levels) {
+  const menu = document.getElementById("quality-menu");
+  menu.innerHTML = `<div onclick="setHLSQuality(-1)">Auto</div>`;
+  levels.forEach((l, i) => {
+    menu.innerHTML += `<div onclick="setHLSQuality(${i})">${l.height}p</div>`;
+  });
+}
+
+function setHLSQuality(level) {
+  if (hls) hls.currentLevel = level;
+  document.getElementById("quality-menu").style.display = "none";
+}
+
+/* ================= DRM ================= */
+
+async function loadDRM(mpdUrl, keys) {
+  shaka.polyfill.installAll();
+  if (!shaka.Player.isBrowserSupported()) {
+    throw new Error("DRM not supported");
+  }
+
+  shakaPlayer = new shaka.Player(video);
+
+  const clearKeys = {};
+  keys.forEach(k => {
+    const [kid, key] = k.split(":");
+    clearKeys[kid] = key;
+  });
+
+  shakaPlayer.configure({
+    drm: { clearKeys }
+  });
+
+  await shakaPlayer.load(mpdUrl);
+  buildDRMQualityMenu();
+}
+
+function buildDRMQualityMenu() {
+  const tracks = shakaPlayer.getVariantTracks();
+  const menu = document.getElementById("quality-menu");
+
+  menu.innerHTML = `<div onclick="setDRMQuality(-1)">Auto</div>`;
+
+  [...new Set(tracks.map(t => t.height))]
+    .sort((a, b) => b - a)
+    .forEach(h => {
+      menu.innerHTML += `<div onclick="setDRMQuality(${h})">${h}p</div>`;
+    });
+}
+
+function setDRMQuality(height) {
+  if (height === -1) {
+    shakaPlayer.configure({ abr: { enabled: true } });
+  } else {
+    shakaPlayer.configure({ abr: { enabled: false } });
+    const track = shakaPlayer.getVariantTracks().find(t => t.height === height);
+    if (track) shakaPlayer.selectVariantTrack(track, true);
+  }
+  document.getElementById("quality-menu").style.display = "none";
+}
+
+/* ================= CONTROLS ================= */
+
+playBtn.onclick = () => video.paused ? video.play() : video.pause();
+
+video.ontimeupdate = () => {
+  const p = (video.currentTime / video.duration) * 100;
+  progressFill.style.width = p + "%";
+  timeEl.textContent = format(video.currentTime) + " / " + format(video.duration);
+};
+
+progressBar.onclick = e => {
+  const x = e.offsetX / progressBar.offsetWidth;
+  video.currentTime = x * video.duration;
+};
+
+fullscreenBtn.onclick = () => {
+  document.fullscreenElement
+    ? document.exitFullscreen()
+    : document.getElementById("player-container").requestFullscreen();
+};
+
+function format(s) {
+  if (!s) return "00:00";
+  return Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+}
+
+/* ================= UI ================= */
+
+function showLoading() {
+  document.getElementById("loading").style.display = "block";
+}
+
+function hideLoading() {
+  document.getElementById("loading").style.display = "none";
+}
+
+function showError(msg) {
+  hideLoading();
+  document.getElementById("error-msg").textContent = msg;
+  document.getElementById("error").style.display = "block";
+}
+
+function retry() {
+  location.reload();
+}
+</script>
 
 </body>
 </html>
